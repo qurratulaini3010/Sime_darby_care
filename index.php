@@ -1,0 +1,1 @@
+<?php require __DIR__.'/includes/config.php'; require __DIR__.'/includes/functions.php'; if (current_user()) { if(current_user()['role']==='owner') redirect('owner/index.php'); if(current_user()['role']==='operator') redirect('operator/index.php'); redirect('provider/index.php'); } redirect('login.php');
