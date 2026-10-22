@@ -49,6 +49,23 @@ function upload_attachment(array $file): ?array {
     if (!move_uploaded_file($file['tmp_name'], UPLOAD_DIR . '/' . $name)) throw new RuntimeException('Could not save uploaded photo.');
     return ['name'=>$name,'mime'=>$mime,'size'=>(int)$file['size']];
 }
+function upload_attachment_data(string $dataUrl): ?array {
+    // Photo arrives as a base64 data URL inside a normal urlencoded POST field.
+    // (Hosting currently blocks multipart/form-data requests, so $_FILES is not used.)
+    $dataUrl = trim($dataUrl);
+    if ($dataUrl === '') return null;
+    if (!preg_match('~^data:image/(jpeg|png|webp);base64,([A-Za-z0-9+/=\s]+)$~', $dataUrl, $m)) throw new RuntimeException('Only valid JPG, PNG or WEBP images are allowed.');
+    $bin = base64_decode(preg_replace('~\s+~', '', $m[2]), true);
+    if ($bin === false || $bin === '') throw new RuntimeException('Upload failed. Please choose the photo again.');
+    if (strlen($bin) > MAX_UPLOAD_BYTES) throw new RuntimeException('Upload failed or file exceeds 5 MB.');
+    $finfo = new finfo(FILEINFO_MIME_TYPE); $mime = $finfo->buffer($bin);
+    $allowed = ['image/jpeg'=>'jpg','image/png'=>'png','image/webp'=>'webp'];
+    if (!isset($allowed[$mime]) || @getimagesizefromstring($bin) === false) throw new RuntimeException('Only valid JPG, PNG or WEBP images are allowed.');
+    if (!is_dir(UPLOAD_DIR) && !mkdir(UPLOAD_DIR, 0750, true)) throw new RuntimeException('Upload folder is not available.');
+    $name = bin2hex(random_bytes(18)) . '.' . $allowed[$mime];
+    if (file_put_contents(UPLOAD_DIR . '/' . $name, $bin) === false) throw new RuntimeException('Could not save uploaded photo.');
+    return ['name'=>$name,'mime'=>$mime,'size'=>strlen($bin)];
+}
 function category_emoji(string $slug): string {
     return ['fire-safety'=>'🔥','plumbing'=>'💧','electrical'=>'⚡','security'=>'🛡️','maintenance'=>'🔧','other'=>'💬'][$slug] ?? '📋';
 }
