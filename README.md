@@ -157,4 +157,4 @@ We are a team of four members.
 
 ## License
 
-Add your license here (e.g. MIT), or state that the project is for academic or hackathon use.
+This project is for the use of hackathon only.
