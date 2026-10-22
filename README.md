@@ -6,6 +6,25 @@ A role-based PHP web application for township issue reporting and assistance coo
 
 ---
 
+## Introduction
+
+Sime Darby Care is a team project that explores how a township can respond to residents' problems faster and more transparently. In many neighbourhoods, reporting a problem means calling around, waiting for a reply and never knowing who is handling it. Our platform puts residents, the township coordination centre and service providers on one system.
+
+- **Residents (owners)** register their home or shop and report issues.
+- **The operator** at the coordination centre receives requests and coordinates the response.
+- **Service providers**, such as plumbers, take on assigned work and keep everyone updated.
+
+The project is built by a team of four members, covering the full stack: user authentication, database design, role-based dashboards and the user interface. Elmina Township is our pilot community.
+
+### Project Objectives
+
+1. Give premise owners a simple way to register and request help.
+2. Give the township operator a single place to coordinate assistance.
+3. Give service providers a clear view of the work assigned to them.
+4. Keep all three roles connected through status updates and secure, role-based access.
+
+---
+
 ## Features
 
 - **Premise registration**: owners sign up with their contact details and register a Home or Shop (address and township) in a single step.
@@ -121,6 +140,20 @@ All seeded accounts use the password **`Demo123!`**.
 - Notifications for status changes
 - Self-service password reset
 - Rate limiting on login attempts
+
+## Team
+
+We are a team of four members.
+
+| # | Name | Student ID | Role / Responsibility |
+|---|------|------------|-----------------------|
+| 1 | Qurratul Aini   | 2024654176 | Developing the prototype |
+| 2 | Amirah Zikri    | 2024201774 | Project lead, writing Pitch Deck |
+| 3 | Hazirah Putri   | 2024443184 | Making The Demo Video, Main ideas, Assisting in adhoc |
+| 4 | Nur Haziqqa     | 2024235138 | Making The Demo Video, Main ideas, Assisting in adhoc |
+
+**Course / Event:** SIMEDARBY HACKATHON 2026
+
 
 ## License
 
