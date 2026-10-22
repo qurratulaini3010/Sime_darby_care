@@ -1,0 +1,13 @@
+<?php
+require __DIR__.'/../includes/config.php';require __DIR__.'/../includes/functions.php';$u=require_role(['owner']);
+$st=$pdo->prepare('SELECT p.* FROM premises p WHERE p.owner_id=? ORDER BY p.id DESC LIMIT 1');$st->execute([$u['id']]);$premise=$st->fetch();
+$st=$pdo->prepare('SELECT r.*,c.name category_name,c.slug category_slug FROM requests r JOIN categories c ON c.id=r.category_id WHERE r.owner_id=? ORDER BY r.created_at DESC LIMIT 3');$st->execute([$u['id']]);$recent=$st->fetchAll();
+$cats=category_rows($pdo);$pageTitle='Home';require __DIR__.'/../includes/header.php';?>
+<div class="hero"><div><div class="eyebrow">WELCOME TO SIME DARBY CARE</div><h2>Hello, <?=e(explode(' ',$u['full_name'])[0])?> 👋</h2><p>Elmina Township · <?=e($premise['property_type']??'Premise')?> owner</p><p>Get the right assistance, track your request and stay informed from one place.</p><div style="margin-top:18px"><a class="btn btn-primary btn-block" href="<?=BASE_URL?>/owner/report.php">＋ Report an Issue</a></div></div><div class="hero-art">🛡️</div></div>
+<div class="section-head"><h3>What do you need help with?</h3><small>Choose a category</small></div><div class="grid grid-3">
+<?php foreach($cats as $c):?><a class="category-card" href="<?=BASE_URL?>/owner/report.php?category=<?=$c['id']?>"><span class="category-icon <?=e(category_class($c['slug']))?>"><?=category_emoji($c['slug'])?></span><strong><?=e($c['name'])?></strong><small><?=e($c['description'])?></small></a><?php endforeach;?>
+</div>
+<div class="section-head"><h3>Recent requests</h3><a class="btn btn-secondary btn-sm" href="<?=BASE_URL?>/owner/requests.php">View all →</a></div><div class="card">
+<?php if(!$recent):?><div class="empty">No requests yet. Report your first issue to get started.</div><?php else:?><div class="table-wrap"><table class="table"><thead><tr><th>Request</th><th>Category</th><th>Status</th><th></th></tr></thead><tbody><?php foreach($recent as $r):?><tr><td><strong><?=e($r['request_no'])?></strong><br><small class="muted"><?=e($r['title'])?></small></td><td><?=e($r['category_name'])?></td><td><span class="badge <?=status_class((int)$r['status'])?>"><?=e(status_names()[$r['status']])?></span></td><td><a class="btn btn-secondary btn-sm" href="<?=BASE_URL?>/owner/status.php?id=<?=$r['id']?>">View</a></td></tr><?php endforeach;?></tbody></table></div><?php endif;?></div>
+<div class="alert-999"><span style="font-size:22px">☎</span><div><strong>For fire, serious injury or immediate danger, call 999 first.</strong>Sime Darby Care coordinates supplementary support and does not replace official emergency services.</div></div>
+<?php require __DIR__.'/../includes/footer.php';?>

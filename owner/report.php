@@ -1,0 +1,27 @@
+<?php
+require __DIR__.'/../includes/config.php';require __DIR__.'/../includes/functions.php';$u=require_role(['owner']);verify_csrf();$cats=category_rows($pdo);$error='';$selected=(int)($_GET['category']??$_POST['category_id']??0);
+$st=$pdo->prepare('SELECT * FROM premises WHERE owner_id=? ORDER BY id DESC LIMIT 1');$st->execute([$u['id']]);$premise=$st->fetch();
+if($_SERVER['REQUEST_METHOD']==='POST'){
+  $categoryId=(int)($_POST['category_id']??0);$title=trim($_POST['title']??'');$description=trim($_POST['description']??'');$location=trim($_POST['location']??'');
+  $catCheck=$pdo->prepare('SELECT * FROM categories WHERE id=?');$catCheck->execute([$categoryId]);$cat=$catCheck->fetch();
+  if(!$cat||!$title||!$description||!$location)$error='Please complete the issue type, title, description and location.';
+  else {
+    try{$photo=upload_attachment($_FILES['photo']??[]);$pdo->beginTransaction();$requestNo='SDC2026-'.str_pad((string)random_int(1,99999),5,'0',STR_PAD_LEFT);$st=$pdo->prepare('INSERT INTO requests(request_no,owner_id,premise_id,category_id,title,description,location,township,status,priority) VALUES(?,?,?,?,?,?,?,?,0,?)');$st->execute([$requestNo,$u['id'],$premise['id']??null,$categoryId,$title,$description,$location,$premise['township']??'Elmina',($_POST['priority']??'normal')==='urgent'?'urgent':'normal']);$rid=(int)$pdo->lastInsertId();if($photo){$st=$pdo->prepare('INSERT INTO attachments(request_id,uploaded_by,original_name,stored_name,mime_type,size_bytes) VALUES(?,?,?,?,?,?)');$st->execute([$rid,$u['id'],basename($_FILES['photo']['name']),$photo['name'],$photo['mime'],$photo['size']]);}log_status($pdo,$rid,0,$u['id'],'Request submitted by premise owner.');add_notification($pdo,$u['id'],$rid,'Request received','Your request '.$requestNo.' has been received.');$pdo->commit();$_SESSION['last_request']=$rid;redirect('owner/confirmation.php?id='.$rid);}catch(Throwable $ex){if($pdo->inTransaction())$pdo->rollBack();if(isset($photo)&&$photo)@unlink(UPLOAD_DIR.'/'.$photo['name']);$error=$ex instanceof RuntimeException?$ex->getMessage():'Could not submit the request. Please try again.';}
+  }
+}
+$pageTitle='Report an Issue';require __DIR__.'/../includes/header.php';?>
+<div class="eyebrow">02 / REQUEST ASSISTANCE</div><h2>Report an <span class="red">Issue</span></h2><p class="subtext">Select an issue, describe what happened and submit it to the township coordination centre.</p><?php if($error):?><div class="flash error"><?=e($error)?></div><?php endif;?>
+<form method="post" enctype="multipart/form-data" class="card"><?=csrf_field()?>
+<div class="field"><label for="searchCategory">Search issue type</label><input id="searchCategory" type="search" placeholder="Search fire, plumbing, security…"></div>
+<div class="grid grid-3" id="categoryGrid"><?php foreach($cats as $c):?><label class="category-card category-select" data-name="<?=e(strtolower($c['name']))?>" style="cursor:pointer"><input type="radio" name="category_id" value="<?=$c['id']?>" <?=$selected===$c['id']?'checked':''?> required style="accent-color:var(--sd-red);margin:0 0 8px"><span class="category-icon <?=e(category_class($c['slug']))?>"><?=category_emoji($c['slug'])?></span><strong><?=e($c['name'])?></strong><small><?=e($c['description'])?></small></label><?php endforeach;?></div>
+<div id="fireWarning" class="alert-999" style="display:none"><span style="font-size:22px">☎</span><div><strong>For fire, serious injury or immediate danger, call 999 first.</strong>Sime Darby Care coordinates supplementary support and does not replace official emergency services.</div></div>
+<hr style="border:0;border-top:1px solid var(--sd-border);margin:22px 0"><div class="form-row"><div class="field"><label>Issue title *</label><input name="title" required value="<?=e($_POST['title']??'')?>" placeholder="e.g. Water leaking under kitchen sink"></div><div class="field"><label>Priority</label><select name="priority"><option value="normal">Standard assistance</option><option value="urgent" <?=($_POST['priority']??'')==='urgent'?'selected':''?>>Urgent — needs prompt attention</option></select></div></div>
+<div class="field"><label>Description *</label><textarea name="description" required placeholder="Describe the issue and any important details."><?=e($_POST['description']??'')?></textarea></div>
+<div class="field"><label>Location / premise address *</label><input name="location" required value="<?=e($_POST['location']??$premise['address']??'')?>" placeholder="Address, unit, street, Elmina"></div>
+<div class="field"><label>Photo (optional, JPG/PNG/WEBP up to 5 MB)</label><input type="file" name="photo" accept="image/jpeg,image/png,image/webp"></div>
+<button class="btn btn-primary btn-block">Submit Request</button></form>
+<script>
+const search=document.getElementById('searchCategory');search.addEventListener('input',()=>{const q=search.value.toLowerCase();document.querySelectorAll('.category-select').forEach(x=>x.style.display=x.dataset.name.includes(q)?'':'none')});
+function warn(){const checked=document.querySelector('input[name="category_id"]:checked');const label=checked?.closest('.category-select');document.getElementById('fireWarning').style.display=(label?.dataset.name.includes('fire')||label?.dataset.name.includes('safety'))?'flex':'none';}
+document.querySelectorAll('input[name="category_id"]').forEach(x=>x.addEventListener('change',warn));warn();
+</script><?php require __DIR__.'/../includes/footer.php';?>
