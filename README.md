@@ -1,127 +1,127 @@
-# Pokok ID
+# Sime Darby Care
 
-**Every tree gets an identity. Every resident gets a reason to care.**
+A role-based PHP web application for township issue reporting and assistance coordination in **Elmina Township**. Premise owners (homes and shops) register, report issues and track updates; an operator coordinates the response; and service providers carry out the work.
 
-Entry for the **Sime Darby Property University Hackathon 2026**
-**Track 1:** Township of Tomorrow | **Focus area:** Planet (with People benefits)
-
-*Alternative titles: TeduhMap, Canopy ID*
+> Tagline: *Your township, connected to help.*
 
 ---
 
-## Team
+## Features
 
-**Team name:** [Your Team Name]
-**University:** [Your University]
+- **Premise registration**: owners sign up with their contact details and register a Home or Shop (address and township) in a single step.
+- **Secure authentication**: password hashing, session ID regeneration on login and registration, and a clean logout that destroys the session and cookie.
+- **Role-based routing**: after sign-in, users are redirected to the dashboard for their role.
+- **CSRF protection** on all forms via `verify_csrf()` and `csrf_field()`.
+- **Output escaping** with the `e()` helper to reduce XSS risk.
+- **Demo accounts** shown on the login page for quick testing.
 
-| No. | Name | Role |
-|-----|------|------|
-| 1 | [Member 1 Name] | [e.g. Team Leader / Backend] |
-| 2 | [Member 2 Name] | [e.g. Frontend / UI Design] |
-| 3 | [Member 3 Name] | [e.g. Database / Data Collection] |
-| 4 | [Member 4 Name] | [e.g. Pitch / Documentation] |
+## User Roles
 
----
+| Role | Landing page | Purpose |
+|------|--------------|---------|
+| Owner | `owner/index.php` | Premise owners who report issues and track updates |
+| Operator | `operator/index.php` | Township coordination centre that manages and assigns requests |
+| Provider | `provider/index.php` | Service providers (e.g. plumbers) who handle assigned work |
 
-## Problem
+The root `index.php` checks the current session and sends the user to the right dashboard, or to `login.php` if not signed in.
 
-- Township managers and developers have no street-level record of their trees. Existing tree data is manual, scattered and outdated.
-- Nobody can say which streets have too few trees or where to plant first.
-- Sick or damaged trees go unreported because residents have no connection to the trees around them.
+## Tech Stack
 
-## Solution
+- **Backend:** PHP (procedural), PDO with prepared statements
+- **Database:** MySQL / MariaDB (via PDO)
+- **Frontend:** Server-rendered HTML and CSS (shared `header.php` / `footer.php` layout)
+- **Sessions:** native PHP sessions
 
-Pokok ID gives every tree in a township a digital identity, keeps that record alive through residents, and gives planners the data to decide where to plant next.
-
-### Key features
-
-1. **Tree map:** every tree stored with GPS coordinates, species, size and health status.
-2. **Tree Passport:** a page per tree showing location, photo, size, health and report history.
-3. **Resident participation:** add missed trees, correct marker positions, report problems and adopt a tree. Tagging takes under 30 seconds.
-4. **Trees near me:** the phone's GPS lists the closest trees, with no tags or scanning needed.
-5. **Duplicate check:** a new tree within 3 m of an existing one prompts "Is this the same tree?".
-6. **Planner dashboard:** trees per 100 m by street (lowest first = plant here first), open reports and a health breakdown.
-7. **Monitoring over time:** resident updates and yearly rechecks show growth or loss.
-
-## Data sources (no drone required)
-
-The prototype is data-source agnostic. Every tree records its `source` so the data mix stays transparent.
-
-- Real trees tagged on foot in a pilot area using a phone
-- Open data from OpenStreetMap as a starting inventory
-- Clearly labelled demo trees for scale
-- Optional AI crown detection on openly licensed aerial imagery, as a proof of concept
-
-Drone scanning is planned for Phase 2, not a dependency of the prototype.
-
-## Benefits
-
-| Who | Benefit |
-|-----|---------|
-| Residents | A way to care for local trees (adopt, report, follow) and faster action on problems |
-| Township and developer | A live tree inventory, data-driven planting priorities, early maintenance alerts, measurable tree density per street |
-| Environment | Better-maintained trees and more canopy where it is needed most |
-
-## Tech stack
-
-- **Backend:** PHP (PDO), MySQL
-- **Frontend:** HTML, CSS, JavaScript, Leaflet (map)
-- **Distance calculations:** Haversine formula in SQL
-- **Design:** Figma
-
-## Project structure
+## Project Structure
 
 ```
-pokok_id/
-├── README.md
-├── schema.sql      # database tables and dashboard queries
-└── api.php         # API endpoints
+.
+├── index.php          # Entry point: redirects by role or to login
+├── login.php          # Sign-in form and authentication
+├── register.php       # Owner + premise registration
+├── logout.php         # Destroys session and redirects to login
+├── includes/
+│   ├── config.php     # DB connection ($pdo), session start, BASE_URL
+│   ├── functions.php  # Helpers: current_user(), redirect(), e(), CSRF
+│   ├── header.php     # Shared layout header
+│   └── footer.php     # Shared layout footer
+├── owner/             # Owner dashboard and pages
+├── operator/          # Operator dashboard and pages
+└── provider/          # Provider dashboard and pages
 ```
 
-## API endpoints
+> The `includes/`, `owner/`, `operator/` and `provider/` contents are referenced by the authentication files above. Update this tree to match your actual folders.
 
-| Action | Description |
-|--------|-------------|
-| `all` | All trees for the map |
-| `nearby` | Trees near a point, sorted by distance |
-| `add` | Add a tree, with duplicate check within 3 m |
-| `move` | Correct a tree's marker position |
-| `passport` | Tree details, report history and adopter |
-| `report` | File a problem report |
-| `adopt` | Adopt a tree (one adopter per tree) |
-| `street_density` | Streets ranked by trees per 100 m |
+## Database
 
-Example: `api.php?action=nearby&lat=3.0738&lng=101.5183&radius=100`
+The authentication flow uses at least these two tables.
 
-## Setup
+**`users`**
 
-1. Install XAMPP (or any PHP + MySQL stack).
-2. Import `schema.sql` into MySQL. This creates the `pokok_id` database.
-3. Edit the database credentials at the top of `api.php` if needed.
-4. Place the project folder in `htdocs` and open it through `http://localhost/pokok_id/`.
-5. For phone GPS testing, serve over HTTPS (for example with ngrok), since browsers require it for location access.
+| Column | Notes |
+|--------|-------|
+| `id` | Primary key |
+| `full_name` | |
+| `phone` | |
+| `email` | Unique, stored lowercase |
+| `password_hash` | Generated with `password_hash()` |
+| `role` | `owner`, `operator` or `provider` |
+| `is_active` | Only active users can sign in |
 
-## Limitations
+**`premises`**
 
-| Limitation | How we handle it |
-|------------|------------------|
-| GPS accuracy of about 1 to 5 m | Draggable marker correction and duplicate check; no survey-grade claims |
-| Resident data may contain errors | Second-person verification and visible source labels |
-| Low participation | Under-30-second tagging, adopt-a-tree badges, community events |
-| Species and size are estimates | Labelled as estimates; manual entry allowed |
-| Prototype uses pilot-area and sample data | Stated clearly in the pitch |
-| No authentication yet | Prototype only; login planned for later phases |
+| Column | Notes |
+|--------|-------|
+| `owner_id` | References `users.id` |
+| `property_type` | `Home` or `Shop` |
+| `address` | |
+| `township` | Defaults to `Elmina` |
 
-## Roadmap
+Registration inserts into both tables inside a single transaction, so a failed insert leaves no partial data. Add your own schema/seed SQL file (for example `database/schema.sql`) and reference it here.
 
-- **Prototype (hackathon):** tree map, passports, resident add and report flow, adoption, planner dashboard
-- **Phase 2:** drone scans of a pilot township for automatic detection, plus building and shade analysis
-- **Phase 3:** integration with the developer's township management and maintenance systems
+## Getting Started
 
-## Pitch line
+### Prerequisites
 
-> "Plantations know every tree they own. Our townships don't. Pokok ID gives every tree an identity and every resident a reason to care."
+- PHP 8.0 or newer
+- MySQL or MariaDB
+- A local server stack such as XAMPP, Laragon or MAMP, or PHP's built-in server
 
-## Acknowledgements
+### Installation
 
-Built for the Sime Darby Property University Hackathon 2026. Map data from OpenStreetMap contributors.
+1. Clone or copy the project into your web root (e.g. `htdocs/simecare`).
+2. Create a database and import your schema and seed data.
+3. Edit `includes/config.php` with your database credentials and set `BASE_URL` to match where the app is served (e.g. `/simecare`).
+4. Open the app in your browser, e.g. `http://localhost/simecare/`.
+
+## Demo Accounts
+
+All seeded accounts use the password **`Demo123!`**.
+
+| Role | Email |
+|------|-------|
+| Owner | `amira.owner@example.com` |
+| Operator | `operator@simecare.test` |
+| Provider | `plumber@simecare.test` |
+
+> Remove the demo accounts table from `login.php` and change these passwords before any real deployment.
+
+## Security Notes
+
+- Passwords are hashed with `password_hash()` and checked with `password_verify()`.
+- All database queries use PDO prepared statements.
+- `session_regenerate_id(true)` runs on login and registration to prevent session fixation.
+- Forms include CSRF tokens; output is escaped before rendering.
+- Registration requires a valid email, a password of at least 8 characters, and a Home/Shop premise type.
+
+## Roadmap Ideas
+
+- Issue reporting with photo uploads and status tracking
+- Operator assignment of requests to providers
+- Notifications for status changes
+- Self-service password reset
+- Rate limiting on login attempts
+
+## License
+
+Add your license here (e.g. MIT), or state that the project is for academic or hackathon use.
